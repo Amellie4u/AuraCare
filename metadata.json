@@ -1,0 +1,6 @@
+{
+  "name": "AuraCare",
+  "description": "Seizure tracking, medication reminders, daily wellness, medical record uploads, calendar appointments, emergency alerts, and clinical PDF & email reporting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

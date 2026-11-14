@@ -1,0 +1,184 @@
+{
+  "entities": {
+    "PatientProfile": {
+      "title": "PatientProfile",
+      "description": "Patient profile, neurological context, dietary preference, and primary specialist details.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Authenticated Firebase UID" },
+        "fullName": { "type": "string", "description": "Patient full name" },
+        "dateOfBirth": { "type": "string", "description": "Date of birth string" },
+        "epilepsyType": { "type": "string", "description": "Diagnosis or seizure classification" },
+        "primaryNeurologist": { "type": "string", "description": "Primary neurologist or epileptologist name" },
+        "neurologistEmail": { "type": "string", "description": "Provider email for clinical reports" },
+        "dietaryPreference": { "type": "string", "description": "Dietary plan such as Balanced, Ketogenic, Modified Atkins, or Low-Glycemic" },
+        "allergies": { "type": "string", "description": "Known allergies" },
+        "medicalNotes": { "type": "string", "description": "Additional patient care notes" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on create" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update" }
+      },
+      "required": ["userId", "fullName", "dietaryPreference", "createdAt", "updatedAt"]
+    },
+    "SeizureLog": {
+      "title": "SeizureLog",
+      "description": "Recorded seizure event with duration, triggers, medication side effects, and clinical notes.",
+      "type": "object",
+      "properties": {
+        "seizureType": { "type": "string" },
+        "durationSeconds": { "type": "integer" },
+        "occurredAtMillis": { "type": "integer" },
+        "triggers": { "type": "array" },
+        "symptomsAndAura": { "type": "string" },
+        "medicationSideEffects": { "type": "array" },
+        "postIctalNotes": { "type": "string" },
+        "severity": { "type": "integer" },
+        "emergencyNotified": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["seizureType", "durationSeconds", "occurredAtMillis", "triggers", "medicationSideEffects", "severity", "emergencyNotified", "createdAt", "updatedAt"]
+    },
+    "MedicationEntry": {
+      "title": "MedicationEntry",
+      "description": "Current or past medication with dosage, schedule times, side effects, and reminder toggle.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "dosage": { "type": "string" },
+        "frequency": { "type": "string" },
+        "scheduleTimes": { "type": "array" },
+        "status": { "type": "string", "enum": ["current", "past"] },
+        "prescribedBy": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "stopReason": { "type": "string" },
+        "sideEffectsNoted": { "type": "array" },
+        "reminderEnabled": { "type": "boolean" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "dosage", "frequency", "scheduleTimes", "status", "sideEffectsNoted", "reminderEnabled", "createdAt", "updatedAt"]
+    },
+    "DoseLog": {
+      "title": "DoseLog",
+      "description": "Tracks whether a scheduled medication dose was taken on a given date.",
+      "type": "object",
+      "properties": {
+        "medicationId": { "type": "string" },
+        "medicationName": { "type": "string" },
+        "dosage": { "type": "string" },
+        "scheduledTime": { "type": "string" },
+        "dateKey": { "type": "string" },
+        "taken": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["medicationId", "medicationName", "scheduledTime", "dateKey", "taken", "createdAt", "updatedAt"]
+    },
+    "DailyLog": {
+      "title": "DailyLog",
+      "description": "Daily activity or food intake entry with diet tags and timestamps.",
+      "type": "object",
+      "properties": {
+        "entryType": { "type": "string", "enum": ["activity", "food"] },
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "mealTime": { "type": "string" },
+        "durationMinutes": { "type": "integer" },
+        "caloriesOrAmount": { "type": "string" },
+        "dietTags": { "type": "array" },
+        "notes": { "type": "string" },
+        "loggedAtMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["entryType", "title", "category", "durationMinutes", "dietTags", "loggedAtMillis", "createdAt", "updatedAt"]
+    },
+    "MedicalAppointment": {
+      "title": "MedicalAppointment",
+      "description": "Scheduled healthcare visit with calendar sync status and provider email.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "doctorName": { "type": "string" },
+        "clinicLocation": { "type": "string" },
+        "providerEmail": { "type": "string" },
+        "appointmentMillis": { "type": "integer" },
+        "notes": { "type": "string" },
+        "linkedToCalendar": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "appointmentMillis", "linkedToCalendar", "createdAt", "updatedAt"]
+    },
+    "EmergencyContact": {
+      "title": "EmergencyContact",
+      "description": "Caregiver or emergency contact details for urgent notifications.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "relationship": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "isPrimary": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "isPrimary", "createdAt", "updatedAt"]
+    },
+    "MedicalRecord": {
+      "title": "MedicalRecord",
+      "description": "Uploaded medical record, lab test result, or imaging summary attached to the patient profile.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "recordType": { "type": "string" },
+        "recordDate": { "type": "string" },
+        "facilityOrDoctor": { "type": "string" },
+        "findingsSummary": { "type": "string" },
+        "fileName": { "type": "string" },
+        "mimeType": { "type": "string" },
+        "localFileUri": { "type": "string" },
+        "fileSizeBytes": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "recordType", "fileSizeBytes", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/PatientProfile" },
+      "description": "Patient profile document scoped strictly to the authenticated user"
+    },
+    "/users/{userId}/seizures/{seizureId}": {
+      "schema": { "$ref": "#/entities/SeizureLog" },
+      "description": "User-owned seizure event logs"
+    },
+    "/users/{userId}/medications/{medicationId}": {
+      "schema": { "$ref": "#/entities/MedicationEntry" },
+      "description": "User-owned current and past medications"
+    },
+    "/users/{userId}/doseLogs/{doseLogId}": {
+      "schema": { "$ref": "#/entities/DoseLog" },
+      "description": "Daily medication dose adherence logs"
+    },
+    "/users/{userId}/dailyLogs/{dailyLogId}": {
+      "schema": { "$ref": "#/entities/DailyLog" },
+      "description": "User-owned daily activities and food intake records"
+    },
+    "/users/{userId}/appointments/{appointmentId}": {
+      "schema": { "$ref": "#/entities/MedicalAppointment" },
+      "description": "User-owned medical appointments linked to calendar"
+    },
+    "/users/{userId}/emergencyContacts/{contactId}": {
+      "schema": { "$ref": "#/entities/EmergencyContact" },
+      "description": "User-owned emergency contacts"
+    },
+    "/users/{userId}/medicalRecords/{recordId}": {
+      "schema": { "$ref": "#/entities/MedicalRecord" },
+      "description": "User-owned uploaded medical records and test result summaries"
+    }
+  }
+}

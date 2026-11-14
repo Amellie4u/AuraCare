@@ -1,0 +1,359 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidServerTimestampsOnCreate(data) {
+      return data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidServerTimestampsOnUpdate(data) {
+      return data.createdAt == existing().createdAt &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidBoundedStringList(val, maxItems) {
+      return val is list && val.size() <= maxItems && (val.size() == 0 || val[0] is string);
+    }
+
+    function isValidOptionalString(data, key, maxLen) {
+      return !((key) in data) || (data[key] is string && data[key].size() <= maxLen);
+    }
+
+    function isValidPatientProfile(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.fullName is string && data.fullName.size() >= 1 && data.fullName.size() <= 100 &&
+             data.dietaryPreference is string && data.dietaryPreference.size() >= 1 && data.dietaryPreference.size() <= 40 &&
+             isValidOptionalString(data, 'dateOfBirth', 30) &&
+             isValidOptionalString(data, 'epilepsyType', 100) &&
+             isValidOptionalString(data, 'primaryNeurologist', 100) &&
+             isValidOptionalString(data, 'neurologistEmail', 120) &&
+             isValidOptionalString(data, 'allergies', 300) &&
+             isValidOptionalString(data, 'medicalNotes', 1000);
+    }
+
+    function isValidSeizureLog(data) {
+      return data.seizureType is string && data.seizureType.size() >= 1 && data.seizureType.size() <= 60 &&
+             data.durationSeconds is int && data.durationSeconds >= 0 && data.durationSeconds <= 86400 &&
+             data.occurredAtMillis is int && data.occurredAtMillis >= 0 && data.occurredAtMillis <= 9999999999999 &&
+             isValidBoundedStringList(data.triggers, 15) &&
+             isValidBoundedStringList(data.medicationSideEffects, 15) &&
+             data.severity is int && data.severity >= 1 && data.severity <= 5 &&
+             data.emergencyNotified is bool &&
+             isValidOptionalString(data, 'symptomsAndAura', 1000) &&
+             isValidOptionalString(data, 'postIctalNotes', 1500);
+    }
+
+    function isValidMedicationEntry(data) {
+      return data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+             data.dosage is string && data.dosage.size() >= 1 && data.dosage.size() <= 60 &&
+             data.frequency is string && data.frequency.size() >= 1 && data.frequency.size() <= 60 &&
+             isValidBoundedStringList(data.scheduleTimes, 8) &&
+             data.status is string && (data.status == 'current' || data.status == 'past') &&
+             isValidBoundedStringList(data.sideEffectsNoted, 15) &&
+             data.reminderEnabled is bool &&
+             isValidOptionalString(data, 'prescribedBy', 100) &&
+             isValidOptionalString(data, 'startDate', 30) &&
+             isValidOptionalString(data, 'endDate', 30) &&
+             isValidOptionalString(data, 'stopReason', 300) &&
+             isValidOptionalString(data, 'notes', 500);
+    }
+
+    function isValidDoseLog(data) {
+      return data.medicationId is string && data.medicationId.size() >= 1 && data.medicationId.size() <= 128 &&
+             data.medicationName is string && data.medicationName.size() >= 1 && data.medicationName.size() <= 100 &&
+             isValidOptionalString(data, 'dosage', 60) &&
+             data.scheduledTime is string && data.scheduledTime.size() >= 1 && data.scheduledTime.size() <= 20 &&
+             data.dateKey is string && data.dateKey.size() >= 1 && data.dateKey.size() <= 20 &&
+             data.taken is bool;
+    }
+
+    function isValidDailyLog(data) {
+      return data.entryType is string && (data.entryType == 'activity' || data.entryType == 'food') &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.category is string && data.category.size() >= 1 && data.category.size() <= 60 &&
+             data.durationMinutes is int && data.durationMinutes >= 0 && data.durationMinutes <= 1440 &&
+             isValidBoundedStringList(data.dietTags, 10) &&
+             data.loggedAtMillis is int && data.loggedAtMillis >= 0 && data.loggedAtMillis <= 9999999999999 &&
+             isValidOptionalString(data, 'mealTime', 20) &&
+             isValidOptionalString(data, 'caloriesOrAmount', 80) &&
+             isValidOptionalString(data, 'notes', 500);
+    }
+
+    function isValidMedicalAppointment(data) {
+      return data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.appointmentMillis is int && data.appointmentMillis >= 0 && data.appointmentMillis <= 9999999999999 &&
+             data.linkedToCalendar is bool &&
+             isValidOptionalString(data, 'doctorName', 100) &&
+             isValidOptionalString(data, 'clinicLocation', 200) &&
+             isValidOptionalString(data, 'providerEmail', 120) &&
+             isValidOptionalString(data, 'notes', 800);
+    }
+
+    function isValidEmergencyContact(data) {
+      return data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+             data.isPrimary is bool &&
+             isValidOptionalString(data, 'relationship', 60) &&
+             isValidOptionalString(data, 'phone', 40) &&
+             isValidOptionalString(data, 'email', 120);
+    }
+
+    function isValidMedicalRecord(data) {
+      return data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.recordType is string && data.recordType.size() >= 1 && data.recordType.size() <= 60 &&
+             data.fileSizeBytes is int && data.fileSizeBytes >= 0 && data.fileSizeBytes <= 500000000 &&
+             isValidOptionalString(data, 'recordDate', 30) &&
+             isValidOptionalString(data, 'facilityOrDoctor', 120) &&
+             isValidOptionalString(data, 'findingsSummary', 2000) &&
+             isValidOptionalString(data, 'fileName', 200) &&
+             isValidOptionalString(data, 'mimeType', 100) &&
+             isValidOptionalString(data, 'localFileUri', 500);
+    }
+
+    match /users/{userId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().keys().hasAll(['userId', 'fullName', 'dietaryPreference', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'fullName', 'dateOfBirth', 'epilepsyType',
+                         'primaryNeurologist', 'neurologistEmail', 'dietaryPreference',
+                         'allergies', 'medicalNotes', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidServerTimestampsOnCreate(incoming()) &&
+                       isValidPatientProfile(incoming(), userId);
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidPatientProfile(incoming(), userId) &&
+                       isValidServerTimestampsOnUpdate(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'fullName', 'dateOfBirth', 'epilepsyType',
+                         'primaryNeurologist', 'neurologistEmail', 'dietaryPreference',
+                         'allergies', 'medicalNotes', 'updatedAt'
+                       ]);
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      match /seizures/{seizureId} {
+        allow list: if isOwner(userId);
+        allow get, delete: if isOwner(userId) && isValidId(seizureId);
+        allow create: if isOwner(userId) &&
+                         isValidId(seizureId) &&
+                         incoming().keys().hasAll([
+                           'seizureType', 'durationSeconds', 'occurredAtMillis',
+                           'triggers', 'medicationSideEffects', 'severity',
+                           'emergencyNotified', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'seizureType', 'durationSeconds', 'occurredAtMillis',
+                           'triggers', 'symptomsAndAura', 'medicationSideEffects',
+                           'postIctalNotes', 'severity', 'emergencyNotified',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidServerTimestampsOnCreate(incoming()) &&
+                         isValidSeizureLog(incoming());
+        allow update: if isOwner(userId) &&
+                         isValidId(seizureId) &&
+                         isValidSeizureLog(incoming()) &&
+                         isValidServerTimestampsOnUpdate(incoming()) &&
+                         (
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'seizureType', 'durationSeconds', 'occurredAtMillis',
+                             'triggers', 'symptomsAndAura', 'medicationSideEffects',
+                             'postIctalNotes', 'severity', 'emergencyNotified', 'updatedAt'
+                           ]) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'emergencyNotified', 'updatedAt'
+                           ])
+                         );
+      }
+
+      match /medications/{medicationId} {
+        allow list: if isOwner(userId);
+        allow get, delete: if isOwner(userId) && isValidId(medicationId);
+        allow create: if isOwner(userId) &&
+                         isValidId(medicationId) &&
+                         incoming().keys().hasAll([
+                           'name', 'dosage', 'frequency', 'scheduleTimes',
+                           'status', 'sideEffectsNoted', 'reminderEnabled',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'name', 'dosage', 'frequency', 'scheduleTimes',
+                           'status', 'prescribedBy', 'startDate', 'endDate',
+                           'stopReason', 'sideEffectsNoted', 'reminderEnabled',
+                           'notes', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidServerTimestampsOnCreate(incoming()) &&
+                         isValidMedicationEntry(incoming());
+        allow update: if isOwner(userId) &&
+                         isValidId(medicationId) &&
+                         isValidMedicationEntry(incoming()) &&
+                         isValidServerTimestampsOnUpdate(incoming()) &&
+                         (
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'name', 'dosage', 'frequency', 'scheduleTimes',
+                             'status', 'prescribedBy', 'startDate', 'endDate',
+                             'stopReason', 'sideEffectsNoted', 'reminderEnabled',
+                             'notes', 'updatedAt'
+                           ]) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'reminderEnabled', 'updatedAt'
+                           ])
+                         );
+      }
+
+      match /doseLogs/{doseLogId} {
+        allow list: if isOwner(userId);
+        allow get, delete: if isOwner(userId) && isValidId(doseLogId);
+        allow create: if isOwner(userId) &&
+                         isValidId(doseLogId) &&
+                         incoming().keys().hasAll([
+                           'medicationId', 'medicationName', 'scheduledTime',
+                           'dateKey', 'taken', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'medicationId', 'medicationName', 'dosage',
+                           'scheduledTime', 'dateKey', 'taken', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidServerTimestampsOnCreate(incoming()) &&
+                         isValidDoseLog(incoming());
+        allow update: if isOwner(userId) &&
+                         isValidId(doseLogId) &&
+                         isValidDoseLog(incoming()) &&
+                         isValidServerTimestampsOnUpdate(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['taken', 'updatedAt']);
+      }
+
+      match /dailyLogs/{dailyLogId} {
+        allow list: if isOwner(userId);
+        allow get, delete: if isOwner(userId) && isValidId(dailyLogId);
+        allow create: if isOwner(userId) &&
+                         isValidId(dailyLogId) &&
+                         incoming().keys().hasAll([
+                           'entryType', 'title', 'category', 'durationMinutes',
+                           'dietTags', 'loggedAtMillis', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'entryType', 'title', 'category', 'mealTime',
+                           'durationMinutes', 'caloriesOrAmount', 'dietTags',
+                           'notes', 'loggedAtMillis', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidServerTimestampsOnCreate(incoming()) &&
+                         isValidDailyLog(incoming());
+        allow update: if isOwner(userId) &&
+                         isValidId(dailyLogId) &&
+                         isValidDailyLog(incoming()) &&
+                         isValidServerTimestampsOnUpdate(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'entryType', 'title', 'category', 'mealTime',
+                           'durationMinutes', 'caloriesOrAmount', 'dietTags',
+                           'notes', 'loggedAtMillis', 'updatedAt'
+                         ]);
+      }
+
+      match /appointments/{appointmentId} {
+        allow list: if isOwner(userId);
+        allow get, delete: if isOwner(userId) && isValidId(appointmentId);
+        allow create: if isOwner(userId) &&
+                         isValidId(appointmentId) &&
+                         incoming().keys().hasAll([
+                           'title', 'appointmentMillis', 'linkedToCalendar',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'title', 'doctorName', 'clinicLocation', 'providerEmail',
+                           'appointmentMillis', 'notes', 'linkedToCalendar',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidServerTimestampsOnCreate(incoming()) &&
+                         isValidMedicalAppointment(incoming());
+        allow update: if isOwner(userId) &&
+                         isValidId(appointmentId) &&
+                         isValidMedicalAppointment(incoming()) &&
+                         isValidServerTimestampsOnUpdate(incoming()) &&
+                         (
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'title', 'doctorName', 'clinicLocation', 'providerEmail',
+                             'appointmentMillis', 'notes', 'linkedToCalendar', 'updatedAt'
+                           ]) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'linkedToCalendar', 'updatedAt'
+                           ])
+                         );
+      }
+
+      match /emergencyContacts/{contactId} {
+        allow list: if isOwner(userId);
+        allow get, delete: if isOwner(userId) && isValidId(contactId);
+        allow create: if isOwner(userId) &&
+                         isValidId(contactId) &&
+                         incoming().keys().hasAll(['name', 'isPrimary', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly([
+                           'name', 'relationship', 'phone', 'email',
+                           'isPrimary', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidServerTimestampsOnCreate(incoming()) &&
+                         isValidEmergencyContact(incoming());
+        allow update: if isOwner(userId) &&
+                         isValidId(contactId) &&
+                         isValidEmergencyContact(incoming()) &&
+                         isValidServerTimestampsOnUpdate(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'name', 'relationship', 'phone', 'email',
+                           'isPrimary', 'updatedAt'
+                         ]);
+      }
+
+      match /medicalRecords/{recordId} {
+        allow list: if isOwner(userId);
+        allow get, delete: if isOwner(userId) && isValidId(recordId);
+        allow create: if isOwner(userId) &&
+                         isValidId(recordId) &&
+                         incoming().keys().hasAll([
+                           'title', 'recordType', 'fileSizeBytes', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'title', 'recordType', 'recordDate', 'facilityOrDoctor',
+                           'findingsSummary', 'fileName', 'mimeType', 'localFileUri',
+                           'fileSizeBytes', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidServerTimestampsOnCreate(incoming()) &&
+                         isValidMedicalRecord(incoming());
+        allow update: if isOwner(userId) &&
+                         isValidId(recordId) &&
+                         isValidMedicalRecord(incoming()) &&
+                         isValidServerTimestampsOnUpdate(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'title', 'recordType', 'recordDate', 'facilityOrDoctor',
+                           'findingsSummary', 'fileName', 'mimeType', 'localFileUri',
+                           'fileSizeBytes', 'updatedAt'
+                         ]);
+      }
+    }
+  }
+}

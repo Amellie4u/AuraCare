@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="360dp"
+    android:height="200dp"
+    android:viewportWidth="360"
+    android:viewportHeight="200">
+    <!-- Soft cream background -->
+    <path android:pathData="M0,0h360v200h-360z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:endX="360"
+                android:endY="200"
+                android:startX="0"
+                android:startY="0"
+                android:type="linear">
+                <item
+                    android:color="#FFE8F4F2"
+                    android:offset="0.0" />
+                <item
+                    android:color="#FFD5EFEA"
+                    android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Organic teal back wave -->
+    <path
+        android:fillColor="#4D0D6E6E"
+        android:pathData="M0,130 C70,95 140,160 220,125 C280,100 325,130 360,115 L360,200 L0,200 Z" />
+    <!-- Foreground serene teal wave -->
+    <path
+        android:fillColor="#FF0D6E6E"
+        android:pathData="M0,152 C85,120 155,178 245,142 C300,120 335,148 360,138 L360,200 L0,200 Z" />
+    <!-- Soft sun/calm halo -->
+    <path
+        android:fillColor="#330D6E6E"
+        android:pathData="M180,82 m-42,0 a42,42 0 1,0 84,0 a42,42 0 1,0 -84,0" />
+    <!-- Central protective shield + pulse -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M180,46 L150,58 V82 C150,101 163,117 180,122 C197,117 210,101 210,82 V58 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M158,84 L167,84 L172,71 L179,98 L185,76 L190,84 L202,84"
+        android:strokeColor="#FF0D6E6E"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="3.5" />
+</vector>

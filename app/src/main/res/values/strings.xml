@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">AuraCare</string>
+    <string name="auth_tagline">Calm, complete seizure &amp; care tracking</string>
+    <string name="auth_subtitle">Log seizure durations, triggers, medications, daily nutrition, medical records, and clinical PDF reports in one private place.</string>
+    <string name="sign_in_google">Sign in with Google</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_seizures">Seizures</string>
+    <string name="nav_meds">Meds</string>
+    <string name="nav_daily">Daily</string>
+    <string name="nav_care">Care</string>
+    <string name="emergency_alert">Emergency Alert</string>
+    <string name="generate_pdf_report">PDF &amp; Email Report</string>
+    <string name="link_to_calendar">Link to Calendar</string>
+</resources>
